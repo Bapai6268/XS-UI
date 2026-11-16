@@ -21,5 +21,10 @@ class ListenerTests(unittest.TestCase):
     def test_reject_additional_public_binding(self):
         with self.assertRaisesRegex(RuntimeError,'not loopback'):
             self.check('LISTEN 0 128 127.0.0.1:2095 *:*\nLISTEN 0 128 127.0.0.1:2096 *:*\nLISTEN 0 128 [::]:2095 *:*')
+    def test_public_panel_keeps_subscription_private(self):
+        verify.verify_listeners((2095,2096),lambda *a,**kw:'LISTEN 0 128 0.0.0.0:2095 *:*\nLISTEN 0 128 127.0.0.1:2096 *:*',public_panel=True)
+    def test_public_mode_rejects_public_subscription(self):
+        with self.assertRaises(RuntimeError):
+            verify.verify_listeners((2095,2096),lambda *a,**kw:'LISTEN 0 128 0.0.0.0:2095 *:*\nLISTEN 0 128 0.0.0.0:2096 *:*',public_panel=True)
 
 if __name__=='__main__':unittest.main()

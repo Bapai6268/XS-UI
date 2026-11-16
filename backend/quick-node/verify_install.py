@@ -8,7 +8,7 @@ import time
 import urllib.parse
 import urllib.request
 
-def verify_listeners(ports, execute=subprocess.check_output):
+def verify_listeners(ports, execute=subprocess.check_output, public_panel=False):
     lines=execute(['ss','-H','-ltn'],text=True).splitlines()
     seen=set()
     for line in lines:
@@ -16,12 +16,13 @@ def verify_listeners(ports, execute=subprocess.check_output):
         if len(fields)<4:continue
         address, separator, port=fields[3].rpartition(':')
         if not separator or not port.isdigit() or int(port) not in ports:continue
-        if address not in ('127.0.0.1','[::1]','::1'):
+        allowed=('0.0.0.0',) if public_panel and int(port)==ports[0] else ('127.0.0.1','[::1]','::1')
+        if address not in allowed:
             raise RuntimeError('Management/subscription listener is not loopback-only')
         seen.add(int(port))
     if seen!=set(ports):raise RuntimeError('Private listeners are not ready')
 
-def verify(path):
+def verify(path,public_panel=False):
     with open(path) as stream:
         account=json.load(stream)
     port=account['port']
@@ -40,9 +41,9 @@ def verify(path):
             if not login.get('success'):raise RuntimeError('Login verification failed')
             result=request('status?r=sbd')
             if result.get('obj',{}).get('sbd',{}).get('running') is True:
-                verify_listeners((port,sub_port))
+                verify_listeners((port,sub_port),public_panel=public_panel)
                 request('logout')
-                print('PASS: private panel login and proxy core readiness. Public nodes/certificates still require tests.')
+                print('PASS: panel login, expected listener bindings and proxy core readiness. Public nodes/certificates still require tests.')
                 return
         except Exception:
             pass
@@ -50,5 +51,5 @@ def verify(path):
     raise RuntimeError('Readiness failed. Inspect sudo journalctl -u xs-ui; credentials withheld.')
 
 if __name__=='__main__':
-    try:verify(sys.argv[1])
+    try:verify(sys.argv[1],public_panel='--public-panel' in sys.argv[2:])
     except Exception as error:raise SystemExit(str(error))

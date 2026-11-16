@@ -10,7 +10,7 @@
     <v-list-item
       height="63"
       prepend-avatar="@/assets/logo.svg"
-      title="S-UI"
+      title="XS-UI"
     >
       <template
         v-if="isMobile"

@@ -242,12 +242,13 @@ import InboundVue from '@/layouts/modals/Inbound.vue'
 import Stats from '@/layouts/modals/Stats.vue'
 import Sessions from '@/layouts/modals/Sessions.vue'
 import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { createInbound, Inbound } from '@/types/inbounds'
 import { tls } from '@/types/tls'
 import RandomUtil from '@/plugins/randomUtil'
 import QuickNode from '@/layouts/modals/QuickNode.vue'
 
-const quickVisible = ref(false)
+const quickVisible = ref(useRoute().query.quick === '1')
 
 const inbounds = computed((): Inbound[] => {
   return <Inbound[]> Data().inbounds

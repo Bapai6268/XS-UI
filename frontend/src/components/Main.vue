@@ -17,6 +17,14 @@
     <v-responsive :class="reloadItems.length>0 ? 'fill-height text-center' : 'align-center'">
       <v-row class="d-flex align-center justify-center">
         <v-col cols="auto">
+          <v-btn color="primary" size="large" :to="{ path: '/inbounds', query: { quick: '1' } }">
+            一键创建节点 · Hysteria2 / Reality / SOCKS5
+          </v-btn>
+          <p class="mt-3">XS-UI · 基于 S-UI 开发</p>
+        </v-col>
+      </v-row>
+      <v-row class="d-flex align-center justify-center">
+        <v-col cols="auto">
           <v-img
             src="@/assets/logo.svg"
             :width="reloadItems.length>0 ? 100 : 200"

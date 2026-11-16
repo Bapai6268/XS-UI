@@ -1,6 +1,6 @@
 {
   "name": "XS-UI",
-  "version": "v0.1.0-dev.2",
+  "version": "v0.1.0-dev.3",
   "upstream_release": "v1.6.7",
   "frontend_commit": "f473aeba368de6581cad70412c098ed98370cbcc",
   "backend_commit": "3c38b80172d4a6cbfcce9fd224a899d8b126d440",
@@ -9,14 +9,15 @@
   "go": "1.27.3",
   "node": "24.22.1",
   "platform": "linux/amd64",
-  "binary_sha256": "3d4773af70a1aa272fe4a595bb347cf02472376d8d10bc35d497918df9e2ce8e",
+  "binary_sha256": "d0a5c6deb2dbd3f333dc0c5dffe2f2cc1d8eaee04756028b2b3e2d87400bd284",
   "build_tags": "with_quic,with_utls,with_acme,netgo,osusergo,sqlite_omit_load_extension",
-  "frontend_tests": 157,
+  "frontend_tests": 158,
   "quick_node_tests": 24,
   "real_api_smoke": "passed api-only",
   "live_proxy_tests": "blocked locally by netlink socket permissions; VPS tests pending",
   "remote_vps_modified": false,
-  "binary_origin": "unchanged final dev.1 binary; application sources unchanged",
-  "installer_tests": 14,
-  "github_published": false
+  "binary_origin": "rebuilt with dev.3 frontend",
+  "installer_tests": 20,
+  "github_published": false,
+  "release_sha256": "d5fa50ca264bac77e477b96f3a96a06f4f056ab4a3fdcc20a1ae2e74f0a1517e"
 }

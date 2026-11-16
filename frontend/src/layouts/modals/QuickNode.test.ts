@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { nextTick } from 'vue'
 import QuickNode from './QuickNode.vue'
 import Data from '@/store/modules/data'
 import HttpUtils from '@/plugins/httputil'
@@ -54,6 +55,15 @@ function mountForm() {
 }
 
 describe('quick form with the real S-UI store and simulated HTTP responses', () => {
+  it('fills the certificate domain from the server domain while preserving a manual override', async () => {
+    const { wrapper, vm } = mountForm()
+    vm.host = 'new.example.com'; await nextTick()
+    expect(vm.certificateHost).toBe('new.example.com')
+    vm.certificateHost = 'manual.example.com'
+    vm.host = 'other.example.com'; await nextTick()
+    expect(vm.certificateHost).toBe('manual.example.com')
+    wrapper.unmount()
+  })
   it('refuses to write when the real core status is down', async () => {
     const { wrapper, vm } = mountForm()
     db.coreRunning = false; vm.protocol = 'socks'
@@ -77,6 +87,7 @@ describe('quick form with the real S-UI store and simulated HTTP responses', () 
   it('requires ACME prerequisites before writing anything', async () => {
     const { wrapper, vm } = mountForm()
     vm.protocol = 'hysteria2'; vm.certificateMode = 'acme'
+    vm.certificateHost = 'proxy.example.com'; vm.certificateEmail = 'operator@example.com'
     await vm.create()
     expect(vm.error).toContain('TCP 80')
     expect(calls).toHaveLength(0)

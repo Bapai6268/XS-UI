@@ -46,12 +46,12 @@
             <template v-if="certificateMode === 'acme'">
               <v-text-field
                 v-model="certificateHost"
-                label="证书域名"
+                label="证书域名（已自动填入，可修改）"
                 :disabled="started"
               />
               <v-text-field
                 v-model="certificateEmail"
-                label="证书联系邮箱"
+                label="证书联系邮箱（填写你自己的邮箱）"
                 :disabled="started"
               />
               <v-checkbox
@@ -136,7 +136,7 @@
           >
             节点已保存并提交启用。请导入客户端测试连接，确认核心运行和端口放行。
             <template v-if="protocol === 'hysteria2' && certificateMode === 'acme'">
-              首次证书在后台申请，保存成功不代表证书已签发。签发完成前连接会失败；请在核心日志查看结果，勿关闭客户端的证书验证。
+              首次证书在后台申请，当前是“等待证书”状态，尚未确认可连接。请先在首页日志确认签发成功，再导入客户端。失败时检查域名解析和 TCP 80，不要重复创建。
             </template>
           </v-alert>
           <v-textarea
@@ -195,7 +195,7 @@
 import { computed, ref, watch } from 'vue'
 import Data from '@/store/modules/data'
 import HttpUtils from '@/plugins/httputil'
-import { availablePort, buildQuickPlan, hostOnly, secretHex, writeQuickPlan } from '@/plugins/quickNode'
+import { availablePort, buildQuickPlan, certificateDomain, hostOnly, secretHex, writeQuickPlan } from '@/plugins/quickNode'
 import type { QuickPlan, QuickProtocol, QuickOptions } from '@/plugins/quickNode'
 
 const props = defineProps<{ visible: boolean }>()
@@ -203,7 +203,7 @@ const emit = defineEmits<{ close: [] }>()
 const store = Data()
 const protocol = ref<QuickProtocol>('hysteria2')
 const protocols = [{ title: 'Hysteria2', value: 'hysteria2' }, { title: 'VLESS + Reality + Vision', value: 'reality' }, { title: 'SOCKS5', value: 'socks' }]
-const host = ref('')
+const host = ref(window.location.hostname)
 const tag = ref('')
 const port = ref(443)
 const tlsId = ref<number>()
@@ -211,6 +211,12 @@ const certificateMode = ref<'acme' | 'existing'>('acme')
 const certificateHost = ref('')
 const certificateEmail = ref('')
 const certificateReady = ref(false)
+watch(host, (value, previous) => {
+  if (certificateHost.value && certificateHost.value !== previous) return
+  try { certificateHost.value = certificateDomain(value) }
+  catch { certificateHost.value = '' }
+}, { immediate: true })
+
 const target = ref('')
 const socksPublic = ref(false)
 const socksAcknowledged = ref(false)
@@ -240,7 +246,7 @@ watch(() => props.visible, open => {
   error.value = ''
   copied.value = false
   resetPort()
-})
+}, { immediate: true })
 function close() {
   if (busy.value) return
   result.value = undefined
@@ -273,6 +279,8 @@ async function create() {
     const options: QuickOptions = { protocol: protocol.value, host: host.value, tag: tag.value, port: port.value, socksPublic: socksPublic.value }
     if (protocol.value === 'hysteria2') {
       if (certificateMode.value === 'acme') {
+        if (!certificateHost.value.trim()) throw new Error('请填写证书域名；在上方填写域名时会自动带入这里。')
+        if (!certificateEmail.value.trim()) throw new Error('请填写证书联系邮箱。')
         if (!certificateReady.value) throw new Error('请先确认域名解析、TCP 80 和证书服务条款。')
         if (usedPorts().includes(80)) throw new Error('面板中已有节点占用 80 端口，请先处理证书验证端口冲突。')
         options.acme = { domain: certificateHost.value, email: certificateEmail.value.trim() }

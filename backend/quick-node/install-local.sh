@@ -32,7 +32,8 @@ fi
 if ss -H -ltn | awk '{print $4}' | grep -Eq ':(2095|2096)$'; then
   die 'Panel ports 2095 or 2096 are occupied.'
 fi
-[[ -f "$package_dir/configure_bbr.py" && -f "$package_dir/verify_install.py" ]] || die 'Missing setup helpers.'
+[[ -f "$package_dir/configure_bbr.py" && -f "$package_dir/verify_install.py" && -f "$package_dir/set_panel_listener.py" ]] || die 'Missing setup helpers.'
+[[ -f "$package_dir/show_access.py" && -f "$package_dir/prepare_firewall.sh" ]] || die 'Missing completion helpers.'
 setup_file=$(mktemp /run/xs-ui-setup.XXXXXXXX)
 trap 'rm -f -- "$setup_file"' EXIT
 python3 - "$setup_file" <<'PY'
@@ -45,16 +46,15 @@ install -d -o root -g root -m 0755 /opt/xs-ui
 install -d -o xs-ui -g xs-ui -m 0700 /var/lib/xs-ui
 install -o root -g root -m 0755 "$package_dir/sui" /opt/xs-ui/sui
 runuser -u xs-ui -- env SUI_DB_FOLDER=/var/lib/xs-ui/db /opt/xs-ui/sui quick-init < "$setup_file"
+runuser -u xs-ui -- python3 - /var/lib/xs-ui/db/s-ui.db < "$package_dir/set_panel_listener.py"
 install -o root -g root -m 0600 "$setup_file" /root/xs-ui-access.json
 install -o root -g root -m 0644 "$package_dir/xs-ui.service" /etc/systemd/system/xs-ui.service
-python3 "$package_dir/configure_bbr.py"
+if ! python3 "$package_dir/configure_bbr.py"; then
+  printf '%s\n' 'BBR 未能完成设置，请查看上方错误；继续安装面板。' >&2
+fi
 systemctl daemon-reload
 systemctl enable --now xs-ui.service
 systemctl is-active --quiet xs-ui.service || die 'Startup failed; inspect journalctl -u xs-ui.'
-python3 "$package_dir/verify_install.py" /root/xs-ui-access.json
-printf '%s\n' \
-  'Installed. Management and subscription listeners bind to 127.0.0.1.' \
-  'Credentials: /root/xs-ui-access.json (root only).' \
-  'Use an SSH tunnel to local port 2095, then open http://127.0.0.1:2095/app/.' \
-  'Allow TCP 80 for ACME and your selected proxy ports in the cloud firewall.' \
-  'No firewall rules or existing services were changed. Live protocol tests are still required.'
+python3 "$package_dir/verify_install.py" /root/xs-ui-access.json --public-panel
+bash "$package_dir/prepare_firewall.sh"
+python3 "$package_dir/show_access.py"

@@ -6,7 +6,7 @@ import re
 import sys
 import tarfile
 
-EXPECTED={'sui','sui.sha256','install-local.sh','xs-ui.service','configure_bbr.py','verify_install.py','LICENSE','NOTICE','BUILD_TAGS'}
+EXPECTED={'sui','sui.sha256','install-local.sh','xs-ui.service','configure_bbr.py','verify_install.py','set_panel_listener.py','show_access.py','prepare_firewall.sh','LICENSE','NOTICE','BUILD_TAGS'}
 
 def extract(root,name='XS-UI-linux-amd64.tar.gz'):
     root=Path(root)
